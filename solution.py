@@ -38,16 +38,16 @@ if __name__ == "__main__":
 
     with open("measurements.txt", "r") as file:
         def read_chunk():
-            seventy_five_mb_read = file.read(78643200) # 1024 * 1024 * 75
-            seventy_five_mb_len = len(seventy_five_mb_read)
+            thirty_mb_read = file.read(31457280) # 1024 * 1024 * 30
+            thirty_mb_len = len(thirty_mb_read)
             
-            if seventy_five_mb_len == 0:
+            if thirty_mb_len == 0:
                 return ''
 
-            if seventy_five_mb_read[seventy_five_mb_len - 1] == "\n":
-                return seventy_five_mb_read
+            if thirty_mb_read[thirty_mb_len - 1] == "\n":
+                return thirty_mb_read
             else:
-                return seventy_five_mb_read + file.readline()
+                return thirty_mb_read + file.readline()
 
         chunks = iter(read_chunk, '')
 
@@ -57,7 +57,24 @@ if __name__ == "__main__":
 
         process_chunk_fn = process_chunk
         for result in pool.imap_unordered(process_chunk_fn, chunks):
-            all_stations = all_stations | result
+            for key in result.keys():
+                if key in all_stations:
+                    min_temp, sum, max_temp, count = all_stations[key]
+                    min_temp2, sum2, max_temp2, count2 = result[key]
+
+                    if min_temp2 < min_temp:
+                        min_temp = min_temp2
+
+                    sum += sum2
+
+                    if max_temp2 > max_temp:
+                        max_temp = max_temp2
+
+                    count += count2
+
+                    all_stations[key] = (min_temp, sum, max_temp, count)
+                else:
+                    all_stations[key] = result[key]
 
         pool.close()
         pool.join()
